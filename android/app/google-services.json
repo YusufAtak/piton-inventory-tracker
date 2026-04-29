@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "973250361880",
+    "project_id": "pitontracker",
+    "storage_bucket": "pitontracker.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:973250361880:android:9be55ebd71b803e8f2616d",
+        "android_client_info": {
+          "package_name": "com.example.piton_tracker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZDGp6l6kBm9BwO1TxFkRKn02dvJHBgfA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
