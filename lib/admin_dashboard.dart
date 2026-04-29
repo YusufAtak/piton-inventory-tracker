@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'login_screen.dart';
-import 'maintenance_logs_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -12,174 +11,192 @@ class AdminDashboard extends StatefulWidget {
 }
 
 class _AdminDashboardState extends State<AdminDashboard> {
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _serialController = TextEditingController();
-  final TextEditingController _typeController = TextEditingController();
+  Future<void> _showAddUserDialog() async {
+    final TextEditingController emailController = TextEditingController();
+    final TextEditingController passwordController = TextEditingController();
+    String selectedRole = 'Personel';
 
-  void _logout(BuildContext context) async {
-    await FirebaseAuth.instance.signOut();
-    if (context.mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      );
-    }
-  }
-
-  Future<void> _addDevice() async {
-    if (_nameController.text.trim().isEmpty ||
-        _serialController.text.trim().isEmpty ||
-        _typeController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill all fields')),
-      );
-      return;
-    }
-
-    try {
-      await FirebaseFirestore.instance.collection('Inventory').add({
-        'deviceName': _nameController.text.trim(),
-        'serialNumber': _serialController.text.trim(),
-        'type': _typeController.text.trim(),
-      });
-
-      _nameController.clear();
-      _serialController.clear();
-      _typeController.clear();
-
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Device added successfully')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error adding device: $e')),
-        );
-      }
-    }
-  }
-
-  void _showAddDeviceDialog() {
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Add New Device'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Device Name'),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Yeni Kullanıcı Ekle'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: emailController,
+                    decoration: const InputDecoration(labelText: 'E-posta'),
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  TextField(
+                    controller: passwordController,
+                    decoration: const InputDecoration(labelText: 'Şifre (Min 6 karakter)'),
+                    obscureText: true,
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: selectedRole,
+                    decoration: const InputDecoration(labelText: 'Kullanıcı Rolü'),
+                    items: ['Personel', 'Admin'].map((String role) {
+                      return DropdownMenuItem<String>(
+                        value: role,
+                        child: Text(role),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedRole = newValue!;
+                      });
+                    },
+                  ),
+                ],
               ),
-              TextField(
-                controller: _serialController,
-                decoration: const InputDecoration(labelText: 'Serial Number'),
-              ),
-              TextField(
-                controller: _typeController,
-                decoration: const InputDecoration(labelText: 'Device Type (e.g., HMI, LCD)'),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: _addDevice,
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.blueGrey),
-              child: const Text('Add', style: TextStyle(color: Colors.white)),
-            ),
-          ],
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('İptal'),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blueGrey),
+                  onPressed: () async {
+                    if (emailController.text.trim().isEmpty ||
+                        passwordController.text.trim().length < 6) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Geçerli bir e-posta ve en az 6 haneli şifre girin.')),
+                      );
+                      return;
+                    }
+
+                    try {
+                      FirebaseApp tempApp = await Firebase.initializeApp(
+                        name: 'tempUserCreation',
+                        options: Firebase.app().options,
+                      );
+
+                      UserCredential userCredential = await FirebaseAuth.instanceFor(app: tempApp)
+                          .createUserWithEmailAndPassword(
+                        email: emailController.text.trim(),
+                        password: passwordController.text.trim(),
+                      );
+
+                      await FirebaseFirestore.instance
+                          .collection('Users')
+                          .doc(userCredential.user!.uid)
+                          .set({
+                        'email': emailController.text.trim(),
+                        'role': selectedRole,
+                        'createdAt': FieldValue.serverTimestamp(),
+                      });
+
+                      await tempApp.delete();
+
+                      if (mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('$selectedRole başarıyla oluşturuldu!')),
+                        );
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Hata: $e')),
+                        );
+                      }
+                    }
+                  },
+                  child: const Text('Kullanıcı Oluştur', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
         );
       },
     );
   }
 
   @override
-  void dispose() {
-    _nameController.dispose();
-    _serialController.dispose();
-    _typeController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Admin Dashboard - Inventory'),
+        title: const Text('Admin Paneli'),
         backgroundColor: Colors.blueGrey,
         actions: [
-          // Bakım Kayıtlarına giden yeni butonumuz
           IconButton(
-            icon: const Icon(Icons.history_edu),
-            tooltip: 'View Maintenance Logs',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const MaintenanceLogsScreen()),
-              );
-            },
+            icon: const Icon(Icons.person_add),
+            tooltip: 'Yeni Kullanıcı Ekle',
+            onPressed: _showAddUserDialog,
           ),
-          // Çıkış yapma butonu
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () => _logout(context),
-          ),
+            onPressed: () async {
+              await FirebaseAuth.instance.signOut();
+              if (mounted) {
+                Navigator.pop(context);
+              }
+            },
+          )
         ],
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('Inventory').snapshots(),
+        stream: FirebaseFirestore.instance
+            .collection('MaintenanceLogs')
+            .orderBy('timestamp', descending: true)
+            .snapshots(),
         builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return const Center(child: Text('Error loading inventory'));
-          }
-
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final List<QueryDocumentSnapshot> inventoryDocs = snapshot.data!.docs;
-
-          if (inventoryDocs.isEmpty) {
-            return const Center(child: Text('No devices found in inventory.'));
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(child: Text('Henüz rapor bulunmuyor.'));
           }
 
+          final logs = snapshot.data!.docs;
+
           return ListView.builder(
-            itemCount: inventoryDocs.length,
+            itemCount: logs.length,
             itemBuilder: (context, index) {
-              var device = inventoryDocs[index];
+              final log = logs[index].data() as Map<String, dynamic>;
+              final deviceName = log['deviceName'] ?? 'Bilinmiyor';
+              final note = log['note'] ?? 'Not yok';
+              final status = log['status'] ?? 'Bilinmiyor';
+              final photoUrl = log['photoUrl'];
+              final personnelEmail = log['personnelEmail'] ?? 'Bilinmiyor';
+
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: ListTile(
-                  leading: const Icon(Icons.devices, color: Colors.blueGrey),
-                  title: Text(device['deviceName']),
-                  subtitle: Text('SN: ${device['serialNumber']} | Type: ${device['type']}'),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () {
-                      FirebaseFirestore.instance
-                          .collection('Inventory')
-                          .doc(device.id)
-                          .delete();
-                    },
+                  title: Text(deviceName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Durum: $status'),
+                      Text('Not: $note'),
+                      Text('Personel: $personnelEmail'),
+                    ],
                   ),
+                  trailing: photoUrl != null
+                      ? IconButton(
+                    icon: const Icon(Icons.image, color: Colors.blueGrey),
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (_) => Dialog(
+                          child: Image.network(photoUrl),
+                        ),
+                      );
+                    },
+                  )
+                      : const Icon(Icons.image_not_supported, color: Colors.grey),
                 ),
               );
             },
           );
         },
-      ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.blueGrey,
-        onPressed: _showAddDeviceDialog,
-        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
