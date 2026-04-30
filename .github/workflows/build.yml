@@ -11,10 +11,10 @@ jobs:
 
     steps:
       - name: Kodu Klonla
-        uses: actions/checkout@v4 # v4'e güncellendi
+        uses: actions/checkout@v4
 
       - name: Java Kurulumu
-        uses: actions/setup-java@v4 # v4'e güncellendi
+        uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
@@ -29,6 +29,9 @@ jobs:
 
       - name: Kod Analizi (Linting)
         run: flutter analyze
+
+      - name: Birim Testleri Çalıştır (Unit Tests)
+        run: flutter test
 
       - name: APK Derle
         run: flutter build apk --release
