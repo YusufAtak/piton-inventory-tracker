@@ -1,0 +1,8 @@
+{
+  "appTitle": "Maintenance Tracker",
+  "email": "Email",
+  "password": "Password",
+  "loginButton": "LOGIN",
+  "emptyError": "Please enter your email and password.",
+  "loginError": "Invalid email or password!"
+}

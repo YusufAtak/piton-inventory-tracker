@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'admin_dashboard.dart';
 import 'personnel_dashboard.dart';
 
@@ -17,6 +18,13 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
 
   Future<void> _login() async {
+    if (_emailController.text.trim().isEmpty || _passwordController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('emptyError'.tr())),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
@@ -27,20 +35,15 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _passwordController.text.trim(),
       );
 
-      if (userCredential.user != null) {
-        String userEmail = userCredential.user!.email!;
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('Users')
+          .doc(userCredential.user!.uid)
+          .get();
 
-        QuerySnapshot userQuery = await FirebaseFirestore.instance
-            .collection('Users')
-            .where('email', isEqualTo: userEmail)
-            .get();
-
-        if (userQuery.docs.isNotEmpty) {
-          String role = userQuery.docs.first.get('role');
-
-          if (!mounted) return;
-
-          if (role == 'admin') {
+      if (mounted) {
+        if (userDoc.exists) {
+          String role = userDoc['role'];
+          if (role == 'Admin') {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const AdminDashboard()),
@@ -52,16 +55,16 @@ class _LoginScreenState extends State<LoginScreen> {
             );
           }
         } else {
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('User role not found in database!')),
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const PersonnelDashboard()),
           );
         }
       }
-    } on FirebaseAuthException catch (e) {
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message ?? 'Authentication failed')),
+          SnackBar(content: Text('loginError'.tr())),
         );
       }
     } finally {
@@ -84,58 +87,75 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Piton Maintenance Tracker'),
-        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.language, color: Colors.blueGrey),
+            onPressed: () {
+              if (context.locale == const Locale('tr')) {
+                context.setLocale(const Locale('en'));
+              } else {
+                context.setLocale(const Locale('tr'));
+              }
+            },
+          ),
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Icon(
-              Icons.engineering,
-              size: 80,
-              color: Colors.blueGrey,
-            ),
-            const SizedBox(height: 32),
-            TextField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.email),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Icon(Icons.inventory, size: 80, color: Colors.blueGrey),
+              const SizedBox(height: 24),
+              Text(
+                'appTitle'.tr(),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                    fontSize: 24, fontWeight: FontWeight.bold, color: Colors.blueGrey),
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.lock),
+              const SizedBox(height: 48),
+              TextField(
+                controller: _emailController,
+                decoration: InputDecoration(
+                  labelText: 'email'.tr(),
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.email),
+                ),
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
               ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              height: 50,
-              child: ElevatedButton(
+              const SizedBox(height: 16),
+              TextField(
+                controller: _passwordController,
+                decoration: InputDecoration(
+                  labelText: 'password'.tr(),
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.lock),
+                ),
+                obscureText: true,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (value) {
+                  _login();
+                },
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
                 onPressed: _isLoading ? null : _login,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blueGrey,
-                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
                 child: _isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                  'LOGIN',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
+                    : Text('loginButton'.tr(),
+                    style: const TextStyle(color: Colors.white, fontSize: 16)),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
