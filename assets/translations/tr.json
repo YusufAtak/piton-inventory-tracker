@@ -1,0 +1,8 @@
+{
+  "appTitle": "Bakım Takip Sistemi",
+  "email": "E-posta",
+  "password": "Şifre",
+  "loginButton": "GİRİŞ YAP",
+  "emptyError": "Lütfen e-posta ve şifrenizi girin.",
+  "loginError": "E-posta veya şifre hatalı!"
+}
