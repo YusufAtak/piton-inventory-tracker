@@ -5,7 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:easy_localization/easy_localization.dart';
+
 
 class AddMaintenanceScreen extends StatefulWidget {
   final String deviceId;
@@ -134,7 +134,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen> {
           children: [
             // YENİ EKLENEN DURUM SEÇİCİ (Dropdown)
             DropdownButtonFormField<String>(
-              value: _selectedStatus,
+              initialValue: _selectedStatus,
               decoration: const InputDecoration(
                 labelText: 'Cihaz Durumu',
                 border: OutlineInputBorder(),
