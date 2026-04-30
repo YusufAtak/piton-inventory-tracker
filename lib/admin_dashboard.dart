@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:easy_localization/easy_localization.dart'; // ÇEVİRİ İÇİN EKLENDİ
+
+import 'package:piton_tracker/login_screen.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -22,28 +25,29 @@ class _AdminDashboardState extends State<AdminDashboard> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: const Text('Yeni Kullanıcı Ekle'),
+              title: Text('add_new_user'.tr()),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
                     controller: emailController,
-                    decoration: const InputDecoration(labelText: 'E-posta'),
+                    decoration: InputDecoration(labelText: 'email'.tr()),
                     keyboardType: TextInputType.emailAddress,
                   ),
                   TextField(
                     controller: passwordController,
-                    decoration: const InputDecoration(labelText: 'Şifre (Min 6 karakter)'),
+                    decoration: InputDecoration(labelText: 'password_min_length'.tr()),
                     obscureText: true,
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
                     initialValue: selectedRole,
-                    decoration: const InputDecoration(labelText: 'Kullanıcı Rolü'),
+                    decoration: InputDecoration(labelText: 'user_role'.tr()),
                     items: ['Personel', 'Admin'].map((String role) {
                       return DropdownMenuItem<String>(
                         value: role,
-                        child: Text(role),
+                        // Veritabanına 'Personel'/'Admin' olarak kaydeder ama ekranda dile göre gösterir
+                        child: Text(role == 'Personel' ? 'personnel'.tr() : 'admin'.tr()),
                       );
                     }).toList(),
                     onChanged: (String? newValue) {
@@ -57,7 +61,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('İptal'),
+                  child: Text('cancel'.tr()),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.blueGrey),
@@ -65,8 +69,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     if (emailController.text.trim().isEmpty ||
                         passwordController.text.trim().length < 6) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Geçerli bir e-posta ve en az 6 haneli şifre girin.')),
+                        SnackBar(
+                            content: Text('invalid_email_password'.tr())),
                       );
                       return;
                     }
@@ -97,18 +101,18 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       if (context.mounted) {
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('$selectedRole başarıyla oluşturuldu!')),
+                          SnackBar(content: Text('$selectedRole ${'successfully_created'.tr()}')),
                         );
                       }
                     } catch (e) {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Hata: $e')),
+                          SnackBar(content: Text('${'error'.tr()}: $e')),
                         );
                       }
                     }
                   },
-                  child: const Text('Kullanıcı Oluştur', style: TextStyle(color: Colors.white)),
+                  child: Text('create_user'.tr(), style: const TextStyle(color: Colors.white)),
                 ),
               ],
             );
@@ -122,20 +126,39 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Admin Paneli'),
+        title: Text('admin_panel'.tr()),
         backgroundColor: Colors.blueGrey,
         actions: [
+          // DİL DEĞİŞTİRME BUTONU
+          TextButton(
+            onPressed: () {
+              if (context.locale == const Locale('tr')) {
+                context.setLocale(const Locale('en'));
+              } else {
+                context.setLocale(const Locale('tr'));
+              }
+            },
+            child: Text(
+              context.locale.languageCode.toUpperCase(),
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.person_add),
-            tooltip: 'Yeni Kullanıcı Ekle',
+            tooltip: 'add_new_user'.tr(),
             onPressed: _showAddUserDialog,
           ),
           IconButton(
             icon: const Icon(Icons.logout),
+            tooltip: 'logout'.tr(),
             onPressed: () async {
               await FirebaseAuth.instance.signOut();
               if (context.mounted) {
-                Navigator.pop(context);
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                      (Route<dynamic> route) => false,
+                );
               }
             },
           )
@@ -152,7 +175,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           }
 
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text('Henüz rapor bulunmuyor.'));
+            return Center(child: Text('no_reports_yet'.tr()));
           }
 
           final logs = snapshot.data!.docs;
@@ -161,11 +184,25 @@ class _AdminDashboardState extends State<AdminDashboard> {
             itemCount: logs.length,
             itemBuilder: (context, index) {
               final log = logs[index].data() as Map<String, dynamic>;
-              final deviceName = log['deviceName'] ?? 'Bilinmiyor';
-              final note = log['note'] ?? 'Not yok';
-              final status = log['status'] ?? 'Bilinmiyor';
+              final deviceName = log['deviceName'] ?? 'unknown'.tr();
+              final note = log['note'] ?? 'no_note'.tr();
+
+              // Durumu çevirmek için kontrol
+              String statusRaw = log['status'] ?? 'unknown'.tr();
+              String statusTranslated = statusRaw;
+              if (statusRaw == 'Çalışıyor') statusTranslated = 'working'.tr();
+              if (statusRaw == 'Arızalı') statusTranslated = 'broken'.tr();
+              if (statusRaw == 'Eksik') statusTranslated = 'missing'.tr();
+
               final photoUrl = log['photoUrl'];
-              final personnelEmail = log['personnelEmail'] ?? 'Bilinmiyor';
+              final personnelEmail = log['personnelEmail'] ?? 'unknown'.tr();
+
+              final timestamp = log['timestamp'] as Timestamp?;
+              String formattedDate = 'unknown_date'.tr();
+              if (timestamp != null) {
+                DateTime date = timestamp.toDate();
+                formattedDate = '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+              }
 
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -174,9 +211,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Durum: $status'),
-                      Text('Not: $note'),
-                      Text('Personel: $personnelEmail'),
+                      Text('${'status'.tr()}: $statusTranslated'),
+                      Text('${'note'.tr()}: $note'),
+                      Text('${'personnel'.tr()}: $personnelEmail'),
+                      const SizedBox(height: 4),
+                      Text('${'date'.tr()}: $formattedDate', style: const TextStyle(color: Colors.blueGrey, fontWeight: FontWeight.w500)),
                     ],
                   ),
                   trailing: photoUrl != null

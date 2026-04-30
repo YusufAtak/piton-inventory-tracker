@@ -5,6 +5,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:easy_localization/easy_localization.dart'; // ÇEVİRİ İÇİN EKLENDİ
+
+import 'package:piton_tracker/login_screen.dart';
 
 class PersonnelDashboard extends StatefulWidget {
   const PersonnelDashboard({super.key});
@@ -19,6 +22,7 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
   XFile? _imageFile;
   bool _isLoading = false;
 
+  // Veritabanına kaydedilecek orijinal değerler
   String _selectedStatus = 'Çalışıyor';
   final List<String> _statusList = ['Çalışıyor', 'Arızalı', 'Eksik'];
 
@@ -36,14 +40,14 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
   Future<void> _submitReport() async {
     if (_deviceController.text.trim().isEmpty || _noteController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lütfen cihaz adını ve notunuzu girin.')),
+        SnackBar(content: Text('empty_device_note_error'.tr())),
       );
       return;
     }
 
     if (_selectedStatus == 'Arızalı' && _imageFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cihaz arızalıysa fotoğraf eklemek zorunludur!')),
+        SnackBar(content: Text('photo_required_error'.tr())),
       );
       return;
     }
@@ -76,9 +80,9 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
       await FirebaseFirestore.instance.collection('MaintenanceLogs').add({
         'deviceName': _deviceController.text.trim(),
         'note': _noteController.text.trim(),
-        'status': _selectedStatus,
+        'status': _selectedStatus, // Veritabanına her zaman orijinal değer gider
         'photoUrl': imageUrl,
-        'personnelEmail': user?.email ?? 'Bilinmiyor',
+        'personnelEmail': user?.email ?? 'unknown'.tr(),
         'timestamp': FieldValue.serverTimestamp(),
       });
 
@@ -91,13 +95,13 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Rapor başarıyla gönderildi!')),
+          SnackBar(content: Text('report_sent_success'.tr())),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata oluştu: $e')),
+          SnackBar(content: Text('${'error'.tr()}: $e')),
         );
       }
     } finally {
@@ -118,15 +122,34 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Personel Paneli - Rapor Ekle'),
+        title: Text('personnel_panel'.tr()),
         backgroundColor: Colors.blueGrey,
         actions: [
+          // DİL DEĞİŞTİRME BUTONU
+          TextButton(
+            onPressed: () {
+              if (context.locale == const Locale('tr')) {
+                context.setLocale(const Locale('en'));
+              } else {
+                context.setLocale(const Locale('tr'));
+              }
+            },
+            child: Text(
+              context.locale.languageCode.toUpperCase(),
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
+            tooltip: 'logout'.tr(),
             onPressed: () async {
               await FirebaseAuth.instance.signOut();
               if (context.mounted) {
-                Navigator.pop(context);
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                      (Route<dynamic> route) => false,
+                );
               }
             },
           )
@@ -139,22 +162,28 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
           children: [
             TextField(
               controller: _deviceController,
-              decoration: const InputDecoration(
-                labelText: 'Cihaz Adı',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: 'device_name'.tr(),
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               initialValue: _selectedStatus,
-              decoration: const InputDecoration(
-                labelText: 'Cihaz Durumu',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: 'device_status'.tr(),
+                border: const OutlineInputBorder(),
               ),
               items: _statusList.map((String status) {
+                // Veritabanı değerine göre ekranda çevirisini gösteriyoruz
+                String translatedStatus = status;
+                if (status == 'Çalışıyor') translatedStatus = 'working'.tr();
+                if (status == 'Arızalı') translatedStatus = 'broken'.tr();
+                if (status == 'Eksik') translatedStatus = 'missing'.tr();
+
                 return DropdownMenuItem<String>(
                   value: status,
-                  child: Text(status),
+                  child: Text(translatedStatus),
                 );
               }).toList(),
               onChanged: (String? newValue) {
@@ -170,9 +199,9 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
             TextField(
               controller: _noteController,
               maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Not / Arıza Detayı',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: 'note_detail'.tr(),
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
@@ -180,7 +209,7 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
               ElevatedButton.icon(
                 onPressed: _takePhoto,
                 icon: const Icon(Icons.camera_alt),
-                label: const Text('Fotoğraf Çek (Zorunlu)'),
+                label: Text('take_photo_required'.tr()),
               ),
               const SizedBox(height: 16),
               if (_imageFile != null)
@@ -205,7 +234,7 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
               ),
               child: _isLoading
                   ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text('RAPORU GÖNDER', style: TextStyle(color: Colors.white, fontSize: 16)),
+                  : Text('submit_report'.tr(), style: const TextStyle(color: Colors.white, fontSize: 16)),
             ),
           ],
         ),

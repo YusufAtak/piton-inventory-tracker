@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:easy_localization/easy_localization.dart';
+import 'package:easy_localization/easy_localization.dart'; // ÇEVİRİ İÇİN EKLENDİ
 import 'admin_dashboard.dart';
 import 'personnel_dashboard.dart';
 
@@ -15,35 +15,39 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
 
   Future<void> _login() async {
+    if (_isLoading) return;
+
+    FocusScope.of(context).unfocus();
+
     if (_emailController.text.trim().isEmpty || _passwordController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('emptyError'.tr())),
+        SnackBar(content: Text('empty_fields_error'.tr())), // ÇEVİRİ EKLENDİ
       );
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
-      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+      var userQuery = await FirebaseFirestore.instance
           .collection('Users')
-          .doc(userCredential.user!.uid)
+          .where('email', isEqualTo: _emailController.text.trim())
           .get();
 
-      if (mounted) {
-        if (userDoc.exists) {
-          String role = userDoc['role'];
-          if (role == 'Admin') {
+      if (userQuery.docs.isNotEmpty) {
+        String userRole = userQuery.docs.first.get('role');
+
+        if (mounted) {
+          if (userRole.toLowerCase() == 'admin') {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const AdminDashboard()),
@@ -54,25 +58,30 @@ class _LoginScreenState extends State<LoginScreen> {
               MaterialPageRoute(builder: (context) => const PersonnelDashboard()),
             );
           }
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const PersonnelDashboard()),
+        }
+      } else {
+        await FirebaseAuth.instance.signOut();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('role_error'.tr())), // ÇEVİRİ EKLENDİ
           );
         }
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        // Firebase Auth hataları için basit hata yönetimi
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${'unexpected_error'.tr()} ${e.message}')),
+        );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('loginError'.tr())),
+          SnackBar(content: Text('${'unexpected_error'.tr()} $e')),
         );
       }
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -86,75 +95,88 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
+      // DİL DEĞİŞTİRME BUTONU BURAYA EKLENDİ
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.language, color: Colors.blueGrey),
+          TextButton.icon(
             onPressed: () {
+              // Mevcut dil Türkçe ise İngilizce yap, İngilizce ise Türkçe yap
               if (context.locale == const Locale('tr')) {
                 context.setLocale(const Locale('en'));
               } else {
                 context.setLocale(const Locale('tr'));
               }
             },
+            icon: const Icon(Icons.language, color: Colors.blueGrey),
+            label: Text(
+              context.locale.languageCode.toUpperCase(), // Ekranda TR veya EN yazar
+              style: const TextStyle(color: Colors.blueGrey, fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Icon(Icons.inventory, size: 80, color: Colors.blueGrey),
-              const SizedBox(height: 24),
-              Text(
-                'appTitle'.tr(),
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                    fontSize: 24, fontWeight: FontWeight.bold, color: Colors.blueGrey),
-              ),
-              const SizedBox(height: 48),
-              TextField(
-                controller: _emailController,
-                decoration: InputDecoration(
-                  labelText: 'email'.tr(),
-                  border: const OutlineInputBorder(),
-                  prefixIcon: const Icon(Icons.email),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Icon(Icons.build_circle_outlined, size: 100, color: Colors.blueGrey),
+                const SizedBox(height: 24),
+                Text(
+                  'app_title'.tr(), // ÇEVİRİ EKLENDİ
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.blueGrey),
                 ),
-                keyboardType: TextInputType.emailAddress,
-                textInputAction: TextInputAction.next,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: 'password'.tr(),
-                  border: const OutlineInputBorder(),
-                  prefixIcon: const Icon(Icons.lock),
+                const SizedBox(height: 48),
+
+                TextFormField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                  decoration: InputDecoration(
+                    labelText: 'email'.tr(), // ÇEVİRİ EKLENDİ
+                    prefixIcon: const Icon(Icons.email_outlined),
+                    border: const OutlineInputBorder(),
+                  ),
                 ),
-                obscureText: true,
-                textInputAction: TextInputAction.done,
-                onSubmitted: (value) {
-                  _login();
-                },
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _login,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueGrey,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                const SizedBox(height: 16),
+
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: true,
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => _login(),
+                  decoration: InputDecoration(
+                    labelText: 'password'.tr(), // ÇEVİRİ EKLENDİ
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    border: const OutlineInputBorder(),
+                  ),
                 ),
-                child: _isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : Text('loginButton'.tr(),
-                    style: const TextStyle(color: Colors.white, fontSize: 16)),
-              ),
-            ],
+                const SizedBox(height: 24),
+
+                _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : ElevatedButton(
+                  onPressed: _login,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: Colors.blueGrey,
+                  ),
+                  child: Text(
+                    'login_button'.tr(), // ÇEVİRİ EKLENDİ
+                    style: const TextStyle(fontSize: 16, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
