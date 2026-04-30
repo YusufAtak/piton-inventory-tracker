@@ -125,7 +125,7 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
             icon: const Icon(Icons.logout),
             onPressed: () async {
               await FirebaseAuth.instance.signOut();
-              if (mounted) {
+              if (context.mounted) {
                 Navigator.pop(context);
               }
             },
@@ -146,7 +146,7 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: _selectedStatus,
+              initialValue: _selectedStatus,
               decoration: const InputDecoration(
                 labelText: 'Cihaz Durumu',
                 border: OutlineInputBorder(),

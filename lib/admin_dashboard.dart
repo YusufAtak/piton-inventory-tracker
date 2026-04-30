@@ -38,7 +38,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
-                    value: selectedRole,
+                    initialValue: selectedRole,
                     decoration: const InputDecoration(labelText: 'Kullanıcı Rolü'),
                     items: ['Personel', 'Admin'].map((String role) {
                       return DropdownMenuItem<String>(
@@ -94,14 +94,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
                       await tempApp.delete();
 
-                      if (mounted) {
+                      if (context.mounted) {
                         Navigator.pop(context);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('$selectedRole başarıyla oluşturuldu!')),
                         );
                       }
                     } catch (e) {
-                      if (mounted) {
+                      if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Hata: $e')),
                         );
@@ -134,7 +134,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             icon: const Icon(Icons.logout),
             onPressed: () async {
               await FirebaseAuth.instance.signOut();
-              if (mounted) {
+              if (context.mounted) {
                 Navigator.pop(context);
               }
             },
