@@ -36,5 +36,13 @@
   "missing": "Missing",
   "note_detail": "Note / Defect Detail",
   "take_photo_required": "Take Photo (Required)",
-  "submit_report": "SUBMIT REPORT"
+  "submit_report": "SUBMIT REPORT",
+  "add_new_device": "Add New Device to Inventory",
+  "device_name_hint": "Device Name (e.g. Zebra ZT411)",
+  "device_type_hint": "Device Type (e.g. Barcode Printer)",
+  "serial_number_hint": "Serial Number (e.g. ZB-10024)",
+  "empty_device_name_error": "Device name cannot be empty!",
+  "device_added_success": "New device successfully added to inventory!",
+  "save": "Save",
+  "add_device_tooltip": "Add New Device"
 }

@@ -14,6 +14,117 @@ class AdminDashboard extends StatefulWidget {
 }
 
 class _AdminDashboardState extends State<AdminDashboard> {
+
+  // --- CİHAZ EKLEME FONKSİYONU (ÇEVİRİ DESTEKLİ) ---
+  Future<void> _showAddDeviceDialog() async {
+    final TextEditingController deviceNameController = TextEditingController();
+    final TextEditingController serialNumberController = TextEditingController();
+    final TextEditingController typeController = TextEditingController();
+    bool isSaving = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text('add_new_device'.tr()), // ÇEVİRİ EKLENDİ
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: deviceNameController,
+                      decoration: InputDecoration(
+                        labelText: 'device_name_hint'.tr(), // ÇEVİRİ EKLENDİ
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: typeController,
+                      decoration: InputDecoration(
+                        labelText: 'device_type_hint'.tr(), // ÇEVİRİ EKLENDİ
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: serialNumberController,
+                      decoration: InputDecoration(
+                        labelText: 'serial_number_hint'.tr(), // ÇEVİRİ EKLENDİ
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSaving ? null : () => Navigator.pop(dialogContext),
+                  child: Text('cancel'.tr()),
+                ),
+                ElevatedButton(
+                  onPressed: isSaving
+                      ? null
+                      : () async {
+                    if (deviceNameController.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('empty_device_name_error'.tr())), // ÇEVİRİ EKLENDİ
+                      );
+                      return;
+                    }
+
+                    setDialogState(() {
+                      isSaving = true;
+                    });
+
+                    try {
+                      await FirebaseFirestore.instance.collection('Inventory').add({
+                        'deviceName': deviceNameController.text.trim(),
+                        'type': typeController.text.trim(),
+                        'serialNumber': serialNumberController.text.trim(),
+                      });
+
+                      if (context.mounted) {
+                        Navigator.pop(dialogContext);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('device_added_success'.tr())), // ÇEVİRİ EKLENDİ
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('${'error'.tr()}: $e')),
+                        );
+                      }
+                    } finally {
+                      if (mounted) {
+                        setDialogState(() {
+                          isSaving = false;
+                        });
+                      }
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blueGrey),
+                  child: isSaving
+                      ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                  )
+                      : Text('save'.tr(), style: const TextStyle(color: Colors.white)), // ÇEVİRİ EKLENDİ
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // --- KULLANICI EKLEME FONKSİYONU ---
   Future<void> _showAddUserDialog() async {
     final TextEditingController emailController = TextEditingController();
     final TextEditingController passwordController = TextEditingController();
@@ -46,7 +157,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     items: ['Personel', 'Admin'].map((String role) {
                       return DropdownMenuItem<String>(
                         value: role,
-                        // Veritabanına 'Personel'/'Admin' olarak kaydeder ama ekranda dile göre gösterir
                         child: Text(role == 'Personel' ? 'personnel'.tr() : 'admin'.tr()),
                       );
                     }).toList(),
@@ -143,11 +253,19 @@ class _AdminDashboardState extends State<AdminDashboard> {
               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
           ),
+          // --- CİHAZ EKLEME BUTONU ---
+          IconButton(
+            icon: const Icon(Icons.add_to_queue),
+            tooltip: 'add_device_tooltip'.tr(), // ÇEVİRİ EKLENDİ
+            onPressed: _showAddDeviceDialog,
+          ),
+          // KULLANICI EKLEME BUTONU
           IconButton(
             icon: const Icon(Icons.person_add),
             tooltip: 'add_new_user'.tr(),
             onPressed: _showAddUserDialog,
           ),
+          // ÇIKIŞ BUTONU
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'logout'.tr(),
