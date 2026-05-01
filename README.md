@@ -19,12 +19,17 @@ This application provides a seamless way for field personnel to report equipment
   - 100% physical and virtual keyboard support.
   - Proper navigation stack management to prevent unauthorized back-routing.
 
-## 🔐 Evaluation Credentials
+### 🧪 Test Accounts
+To quickly explore the role-based features of the application, you can use the following pre-configured test accounts:
 
-Reviewers can use the following pre-configured Admin account to evaluate the dashboard and user management features:
-
+**Admin Account:**
 > **Email:** `admin@piton.com`
 > **Password:** `piton2026`
+
+**Personnel Account:**
+> **Email:** `personnel@test.com`
+> **Password:** `123456`
+
 
 ## 📸 Screenshots
 
@@ -102,11 +107,16 @@ Bu proje, saha personelinin cihaz durumlarını anlık olarak raporlamasını sa
 - **Kullanıcı Deneyimi (UX) ve Navigasyon Güvenliği:** 
   - Sayfalar arası geçişlerde `pushAndRemoveUntil` kullanılarak, kullanıcının cihazın geri tuşuna basıp yetkisiz olduğu veya çıkış yaptığı sayfalara geri dönmesi engellenmiştir.
 
-### 🧪 Test İçin Yönetici Hesabı
-Uygulamanın Admin (Yönetici) panelini, rapor akışını ve kullanıcı ekleme özelliklerini test edebilmeniz için aşağıdaki hesap veritabanında önceden yapılandırılmıştır:
+### 🧪 Test İçin Hazır Hesaplar
+Uygulamanın rol tabanlı erişim kontrolü (RBAC) özelliklerini, Admin panelini ve Personel raporlama akışını hızlıca test edebilmeniz için aşağıdaki hesaplar veritabanında önceden yapılandırılmıştır:
 
+**Admin (Yönetici) Hesabı:**
 > **E-posta:** `admin@piton.com`
 > **Şifre:** `piton2026`
+
+**Personel Hesabı:**
+> **E-posta:** `personnel@test.com`
+> **Şifre:** `123456`
 
 ### 🚀 Kurulum ve Çalıştırma
 
