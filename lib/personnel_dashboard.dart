@@ -5,7 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:easy_localization/easy_localization.dart'; // ÇEVİRİ İÇİN EKLENDİ
+import 'package:easy_localization/easy_localization.dart';
 
 import 'package:piton_tracker/login_screen.dart';
 
@@ -17,7 +17,7 @@ class PersonnelDashboard extends StatefulWidget {
 }
 
 class _PersonnelDashboardState extends State<PersonnelDashboard> {
-  final TextEditingController _deviceController = TextEditingController();
+  String? _selectedDevice; // Eski _deviceController yerine bu eklendi
   final TextEditingController _noteController = TextEditingController();
   XFile? _imageFile;
   bool _isLoading = false;
@@ -38,7 +38,8 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
   }
 
   Future<void> _submitReport() async {
-    if (_deviceController.text.trim().isEmpty || _noteController.text.trim().isEmpty) {
+    // Doğrulama kontrolü Dropdown'a göre güncellendi
+    if (_selectedDevice == null || _noteController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('empty_device_note_error'.tr())),
       );
@@ -78,17 +79,17 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
       final user = FirebaseAuth.instance.currentUser;
 
       await FirebaseFirestore.instance.collection('MaintenanceLogs').add({
-        'deviceName': _deviceController.text.trim(),
+        'deviceName': _selectedDevice, // Artık seçim listesinden geliyor
         'note': _noteController.text.trim(),
-        'status': _selectedStatus, // Veritabanına her zaman orijinal değer gider
+        'status': _selectedStatus,
         'photoUrl': imageUrl,
         'personnelEmail': user?.email ?? 'unknown'.tr(),
         'timestamp': FieldValue.serverTimestamp(),
       });
 
-      _deviceController.clear();
       _noteController.clear();
       setState(() {
+        _selectedDevice = null; // Gönderim sonrası seçim sıfırlanıyor
         _imageFile = null;
         _selectedStatus = 'Çalışıyor';
       });
@@ -113,7 +114,7 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
 
   @override
   void dispose() {
-    _deviceController.dispose();
+    // _deviceController dispose işlemi kaldırıldı
     _noteController.dispose();
     super.dispose();
   }
@@ -160,14 +161,66 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TextField(
-              controller: _deviceController,
-              decoration: InputDecoration(
-                labelText: 'device_name'.tr(),
-                border: const OutlineInputBorder(),
-              ),
+            // --- YENİ EKLENEN CANLI ENVANTER DROPDOWN ALANI ---
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance.collection('Inventory').snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 10.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 10.0),
+                    child: Text('Envanter bulunamadı. Lütfen Firebase\'e cihaz ekleyin.'),
+                  );
+                }
+
+                // Firebase'den gelen belgeleri Listeye çevir (Artık TYPE bilgisini de alıyoruz)
+                final envanterListesi = snapshot.data!.docs.map((doc) {
+                  // Veriyi güvenli bir şekilde Map'e çeviriyoruz
+                  final data = doc.data() as Map<String, dynamic>;
+
+                  final deviceName = data['deviceName']?.toString() ?? 'Bilinmeyen Cihaz';
+
+                  // Eğer type alanı veritabanında varsa al, yoksa boş bırak (Crash olmasını önler)
+                  final type = data.containsKey('type') ? data['type'].toString() : '';
+
+                  // Eğer type doluysa ismin yanına köşeli parantez içinde ekle
+                  if (type.isNotEmpty) {
+                    return '$deviceName [$type]';
+                  }
+
+                  return deviceName; // Type yoksa sadece ismini döndür
+                }).toList();
+
+                return DropdownButtonFormField<String>(
+                  decoration: InputDecoration(
+                    labelText: 'device_name'.tr(), // Dil dosyandaki key'i koruduk
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.devices_other),
+                  ),
+                  value: _selectedDevice,
+                  isExpanded: true,
+                  items: envanterListesi.map((String cihaz) {
+                    return DropdownMenuItem<String>(
+                      value: cihaz,
+                      child: Text(cihaz),
+                    );
+                  }).toList(),
+                  onChanged: (String? yeniDeger) {
+                    setState(() {
+                      _selectedDevice = yeniDeger;
+                    });
+                  },
+                );
+              },
             ),
             const SizedBox(height: 16),
+            // --- MEVCUT DURUM SEÇİM ALANI ---
             DropdownButtonFormField<String>(
               initialValue: _selectedStatus,
               decoration: InputDecoration(
