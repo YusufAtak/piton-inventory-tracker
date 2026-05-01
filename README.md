@@ -16,7 +16,7 @@ This application provides a seamless way for field personnel to report equipment
 - **Media Uploads:** Integrated camera features via `image_picker` and cloud storage via **Firebase Storage** (Mandatory photo rule for 'Broken' devices).
 - **Advanced UX/UI Handling:** 
   - Custom form validation and focus nodes.
-  - 100% physical and virtual keyboard support (Enter key submission optimization).
+  - 100% physical and virtual keyboard support.
   - Proper navigation stack management to prevent unauthorized back-routing.
 
 ## 🔐 Evaluation Credentials
@@ -38,8 +38,32 @@ Reviewers can use the following pre-configured Admin account to evaluate the das
 - **State & Routing:** Standard Flutter SDK
 - **Localization:** easy_localization
 
-## 🚀 Installation & Setup
+# 🚀 Installation & Setup
 
-1. Clone the repository:
-   ```bash
-   git clone [https://github.com/YusufAtak/piton-inventory-tracker.git](https://github.com/YusufAtak/piton-inventory-tracker.git)
+```bash
+git clone https://github.com/YusufAtak/piton-inventory-tracker.git
+cd piton-inventory-tracker
+flutter pub get
+flutter run
+```
+---
+
+<br>
+
+# 🇹🇷 Türkçe Açıklama (TR)
+
+Piton Teknoloji teknik değerlendirme süreci için geliştirilmiş, rol tabanlı bakım ve envanter takip uygulamasıdır.
+
+### Öne Çıkan Geliştirmeler:
+- **Rol Yönetimi:** Firebase Auth ile Admin ve Personel olarak iki farklı yetki seviyesi oluşturulmuştur.
+- **Canlı Veritabanı:** Firestore kullanılarak raporların anlık olarak Admin paneline düşmesi sağlanmıştır.
+- **Çoklu Dil (i18n):** `easy_localization` paketi ile anlık TR/EN dil değişimi entegre edilmiştir.
+- **Dosya Yükleme:** Arızalı cihazlar için Firebase Storage destekli zorunlu fotoğraf çekme özelliği eklenmiştir.
+
+### 🧪 Test Hesabı
+Yönetici (Admin) özelliklerini test etmek için aşağıdaki bilgileri kullanabilirsiniz:
+* **E-posta:** `admin@piton.com`
+* **Şifre:** `piton2026`
+
+***
+*Developed by Yusuf Atak - 2026*
