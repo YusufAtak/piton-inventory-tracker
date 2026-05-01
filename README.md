@@ -28,10 +28,10 @@ Reviewers can use the following pre-configured Admin account to evaluate the das
 
 ## 📸 Screenshots
 
-
 | Login | Personnel Dashboard | Admin Dashboard |
 | :---: | :---: | :---: |
 | <img src="https://github.com/user-attachments/assets/d55e3c53-e510-489e-8dce-7ec0d8010d5a" width="250"/> | <img src="https://github.com/user-attachments/assets/20d667d6-4667-459a-8fad-628c82ea5420" width="250"/> | <img src="https://github.com/user-attachments/assets/d9400f9d-7e9c-4339-ab0e-9629f3f4c0cb" width="250"/> |
+
 ## 💻 Tech Stack
 - **Framework:** Flutter
 - **Backend:** Firebase (Auth, Firestore, Storage)
@@ -39,6 +39,7 @@ Reviewers can use the following pre-configured Admin account to evaluate the das
 - **Localization:** easy_localization
 
 # 🚀 Installation & Setup
+> **Note on Firebase Setup:** For the purpose of this technical evaluation, the Firebase configuration file (`google-services.json`) has been intentionally included in the repository. The project is plug-and-play; **no additional Firebase setup is required** to run the application locally.
 
 ```bash
 git clone https://github.com/YusufAtak/piton-inventory-tracker.git
@@ -50,20 +51,43 @@ flutter run
 
 <br>
 
+<br>
+
+<br>
+
 # 🇹🇷 Türkçe Açıklama (TR)
 
-Piton Teknoloji teknik değerlendirme süreci için geliştirilmiş, rol tabanlı bakım ve envanter takip uygulamasıdır.
+**Piton Teknoloji** teknik değerlendirme süreci için özel olarak tasarlanmış ve geliştirilmiş, rol tabanlı bir bakım ve envanter takip mobil uygulamasıdır. 
 
-### Öne Çıkan Geliştirmeler:
-- **Rol Yönetimi:** Firebase Auth ile Admin ve Personel olarak iki farklı yetki seviyesi oluşturulmuştur.
-- **Canlı Veritabanı:** Firestore kullanılarak raporların anlık olarak Admin paneline düşmesi sağlanmıştır.
-- **Çoklu Dil (i18n):** `easy_localization` paketi ile anlık TR/EN dil değişimi entegre edilmiştir.
-- **Dosya Yükleme:** Arızalı cihazlar için Firebase Storage destekli zorunlu fotoğraf çekme özelliği eklenmiştir.
+Bu proje, saha personelinin cihaz durumlarını anlık olarak raporlamasını sağlarken, yöneticilerin (Admin) bu raporları canlı olarak takip etmesine ve yeni sistem kullanıcıları oluşturmasına olanak tanıyan uçtan uca bir mimari sunar.
 
-### 🧪 Test Hesabı
-Yönetici (Admin) özelliklerini test etmek için aşağıdaki bilgileri kullanabilirsiniz:
-* **E-posta:** `admin@piton.com`
-* **Şifre:** `piton2026`
+### ✨ Öne Çıkan Özellikler ve Teknik Detaylar
+
+- **Gelişmiş Rol Yönetimi (RBAC):** `Firebase Authentication` ve `Firestore` entegrasyonu ile kullanıcılar giriş yaptıkları anda yetkilerine (Admin veya Personel) göre güvenli bir şekilde ilgili panellere yönlendirilir.
+- **Canlı Veri Senkronizasyonu (Real-time):** Raporlamalar **Cloud Firestore** üzerinden anlık dinlenir (`StreamBuilder` mimarisi). Sayfayı yenilemeye gerek kalmadan yeni raporlar anında Admin paneline yansır.
+- **Tam Kapsamlı Çoklu Dil (i18n):** `easy_localization` paketi kullanılarak uygulamanın tamamına İngilizce ve Türkçe dil desteği eklenmiştir. Dil değişimi, uygulamanın durumunu (state) bozmadan anında gerçekleşir.
+- **Dinamik Medya Yönetimi:** `image_picker` ile cihaz kamerası entegrasyonu sağlanmış, cihaz durumu "Arızalı" seçildiğinde **Firebase Storage**'a fotoğraf yükleme işlemi zorunlu tutularak iş mantığı (business logic) güçlendirilmiştir.
+- **Kullanıcı Deneyimi (UX) ve Navigasyon Güvenliği:** 
+  - Sayfalar arası geçişlerde `pushAndRemoveUntil` kullanılarak, kullanıcının cihazın geri tuşuna basıp yetkisiz olduğu veya çıkış yaptığı sayfalara geri dönmesi engellenmiştir.
+
+### 🧪 Test İçin Yönetici Hesabı
+Uygulamanın Admin (Yönetici) panelini, rapor akışını ve kullanıcı ekleme özelliklerini test edebilmeniz için aşağıdaki hesap veritabanında önceden yapılandırılmıştır:
+
+> **E-posta:** `admin@piton.com`
+> **Şifre:** `piton2026`
+
+### 🚀 Kurulum ve Çalıştırma
+
+> **Firebase Kurulumu Hakkında Not:** Bu teknik değerlendirme sürecinin hızlıca ilerleyebilmesi adına Firebase yapılandırma dosyası (`google-services.json`) projeye bilerek dahil edilmiştir. Proje "tak-çalıştır" mantığındadır; uygulamayı yerelde (lokalde) ayağa kaldırmak için **ekstra hiçbir Firebase kurulumuna gerek yoktur.**
+
+Projeyi bilgisayarınızda çalıştırmak için terminalinizde sırasıyla aşağıdaki komutları çalıştırmanız yeterlidir:
+
+```bash
+git clone https://github.com/YusufAtak/piton-inventory-tracker.git
+cd piton-inventory-tracker
+flutter pub get
+flutter run
+```
 
 ***
 *Developed by Yusuf Atak - 2026*
