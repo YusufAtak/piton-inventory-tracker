@@ -36,5 +36,13 @@
   "missing": "Eksik",
   "note_detail": "Not / Arıza Detayı",
   "take_photo_required": "Fotoğraf Çek (Zorunlu)",
-  "submit_report": "RAPORU GÖNDER"
+  "submit_report": "RAPORU GÖNDER",
+  "add_new_device": "Envantere Yeni Cihaz Ekle",
+  "device_name_hint": "Cihaz Adı (Örn: Zebra ZT411)",
+  "device_type_hint": "Cihaz Tipi (Örn: Barkod Yazıcı)",
+  "serial_number_hint": "Seri Numarası (Örn: ZB-10024)",
+  "empty_device_name_error": "Cihaz adı boş bırakılamaz!",
+  "device_added_success": "Yeni cihaz envantere başarıyla eklendi!",
+  "save": "Kaydet",
+  "add_device_tooltip": "Yeni Cihaz Ekle"
 }
