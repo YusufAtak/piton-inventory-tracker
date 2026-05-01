@@ -203,7 +203,7 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
                     border: const OutlineInputBorder(),
                     prefixIcon: const Icon(Icons.devices_other),
                   ),
-                  value: _selectedDevice,
+                  initialValue: _selectedDevice,
                   isExpanded: true,
                   items: envanterListesi.map((String cihaz) {
                     return DropdownMenuItem<String>(
