@@ -13,6 +13,7 @@ This application provides a seamless way for field personnel to report equipment
 - **Role-Based Access Control (RBAC):** Secure routing for `Admin` and `Personnel` with Firebase Authentication.
 - **Real-Time Database:** Live synchronization of maintenance reports using **Cloud Firestore**.
 - **Full i18n Localization:** Dynamic language switching (English/Turkish) without losing application state, powered by `easy_localization`.
+- **Global State Management:** Dynamic Dark/Light theme toggling across all screens seamlessly managed using the **Provider** package.
 - **Media Uploads:** Integrated camera features via `image_picker` and cloud storage via **Firebase Storage** (Mandatory photo rule for 'Broken' devices).
 - **Advanced UX/UI Handling:** 
   - Custom form validation and focus nodes.
@@ -80,11 +81,14 @@ Admins can scale the system by adding new team members directly from the app.
 **5. Real-time Language Switch**
 You can instantly toggle the application language between English and Turkish by tapping the language button (**TR / EN**) located at the top right corner of any screen. The state is preserved during the transition.
 
+**6. Dynamic Theming (Dark/Light Mode)**
+You can instantly toggle between light and dark modes by clicking the **Moon/Sun** icon located in the app bar. Thanks to the **Provider** architecture, your theme preference is preserved and applied globally across all screens (Login, Admin, and Personnel).
+
 
 ## 💻 Tech Stack
 - **Framework:** Flutter
 - **Backend:** Firebase (Auth, Firestore, Storage)
-- **State & Routing:** Standard Flutter SDK
+- **State & Routing:** Provider
 - **Localization:** easy_localization
 
 # 🚀 Installation & Setup
@@ -115,6 +119,7 @@ Bu proje, saha personelinin cihaz durumlarını anlık olarak raporlamasını sa
 - **Gelişmiş Rol Yönetimi (RBAC):** `Firebase Authentication` ve `Firestore` entegrasyonu ile kullanıcılar giriş yaptıkları anda yetkilerine (Admin veya Personel) göre güvenli bir şekilde ilgili panellere yönlendirilir.
 - **Canlı Veri Senkronizasyonu (Real-time):** Raporlamalar **Cloud Firestore** üzerinden anlık dinlenir (`StreamBuilder` mimarisi). Sayfayı yenilemeye gerek kalmadan yeni raporlar anında Admin paneline yansır.
 - **Tam Kapsamlı Çoklu Dil (i18n):** `easy_localization` paketi kullanılarak uygulamanın tamamına İngilizce ve Türkçe dil desteği eklenmiştir. Dil değişimi, uygulamanın durumunu (state) bozmadan anında gerçekleşir.
+- **Global State Management (Durum Yönetimi):** **Provider** paketi kullanılarak uygulamanın tamamına dinamik Karanlık/Aydınlık (Dark/Light) tema desteği entegre edilmiştir.
 - **Dinamik Medya Yönetimi:** `image_picker` ile cihaz kamerası entegrasyonu sağlanmış, cihaz durumu "Arızalı" seçildiğinde **Firebase Storage**'a fotoğraf yükleme işlemi zorunlu tutularak iş mantığı (business logic) güçlendirilmiştir.
 - **Kullanıcı Deneyimi (UX) ve Navigasyon Güvenliği:** 
   - Sayfalar arası geçişlerde `pushAndRemoveUntil` kullanılarak, kullanıcının cihazın geri tuşuna basıp yetkisiz olduğu veya çıkış yaptığı sayfalara geri dönmesi engellenmiştir.
@@ -180,6 +185,9 @@ Sisteme yeni personeller veya yöneticiler dahil etmek Admin yetkisindedir.
 
 **5. Anlık Dil Değişimi**
 Uygulamanın dilini İngilizce ve Türkçe arasında anında değiştirmek için herhangi bir ekranın sağ üst köşesinde bulunan dil butonuna (**TR / EN**) tıklayabilirsiniz. Dil değişimi sırasında sayfadaki verileriniz (state) kaybolmaz.
+
+**6. Dinamik Tema Yönetimi (Karanlık/Aydınlık Mod)**
+Ekranların sağ üst köşesinde yer alan **Güneş/Ay** ikonuna tıklayarak uygulamanın temasını anında değiştirebilirsiniz. **Provider** mimarisi sayesinde, seçtiğiniz tema durumu (state) hafızada tutulur ve Login, Admin, Personel panellerinin tamamına eşzamanlı olarak yansır.
 
 
 ***
