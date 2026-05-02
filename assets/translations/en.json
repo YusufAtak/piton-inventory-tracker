@@ -44,5 +44,6 @@
   "empty_device_name_error": "Device name cannot be empty!",
   "device_added_success": "New device successfully added to inventory!",
   "save": "Save",
-  "add_device_tooltip": "Add New Device"
+  "add_device_tooltip": "Add New Device",
+  "toggle_theme": "Toggle Theme"
 }

@@ -6,6 +6,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:easy_localization/easy_localization.dart';
+import 'package:provider/provider.dart';
+import 'theme_provider.dart';
 
 import 'package:piton_tracker/login_screen.dart';
 
@@ -135,6 +137,21 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
         title: Text('personnel_panel'.tr()),
         backgroundColor: Colors.blueGrey,
         actions: [
+          // PROVIDER: Tema değiştirme butonu
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, child) {
+              return IconButton(
+                icon: Icon(
+                  themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                  color: Colors.white,
+                ),
+                onPressed: () {
+                  themeProvider.toggleTheme();
+                },
+                tooltip: 'toggle_theme'.tr(),
+              );
+            },
+          ),
           TextButton(
             onPressed: () {
               // Uygulama yeniden başlatılmadan anlık dil değişimi.
@@ -150,7 +167,7 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout, color: Colors.white),
             tooltip: 'logout'.tr(),
             onPressed: () async {
               // Oturumu kapatıp Navigation Stack'i tamamen temizliyoruz.

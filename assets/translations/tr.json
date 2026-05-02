@@ -44,5 +44,6 @@
   "empty_device_name_error": "Cihaz adı boş bırakılamaz!",
   "device_added_success": "Yeni cihaz envantere başarıyla eklendi!",
   "save": "Kaydet",
-  "add_device_tooltip": "Yeni Cihaz Ekle"
+  "add_device_tooltip": "Yeni Cihaz Ekle",
+  "toggle_theme": "Temayı Değiştir"
 }
