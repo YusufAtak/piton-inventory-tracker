@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:piton_tracker/login_screen.dart';
+import 'package:provider/provider.dart';
+import 'theme_provider.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -251,6 +253,21 @@ class _AdminDashboardState extends State<AdminDashboard> {
         title: Text('admin_panel'.tr()),
         backgroundColor: Colors.blueGrey,
         actions: [
+          // PROVIDER: Tema değiştirme butonu
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, child) {
+              return IconButton(
+                icon: Icon(
+                  themeProvider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                  color: Colors.white,
+                ),
+                onPressed: () {
+                  themeProvider.toggleTheme();
+                },
+                tooltip: 'toggle_theme'.tr(),
+              );
+            },
+          ),
           // Çoklu Dil Yönetimi
           TextButton(
             onPressed: () {
@@ -267,17 +284,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.add_to_queue),
+            icon: const Icon(Icons.add_to_queue, color: Colors.white),
             tooltip: 'add_device_tooltip'.tr(),
             onPressed: _showAddDeviceDialog,
           ),
           IconButton(
-            icon: const Icon(Icons.person_add),
+            icon: const Icon(Icons.person_add, color: Colors.white),
             tooltip: 'add_new_user'.tr(),
             onPressed: _showAddUserDialog,
           ),
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout, color: Colors.white),
             tooltip: 'logout'.tr(),
             onPressed: () async {
               // GÜVENLİ ÇIKIŞ: Oturumu kapatıp Navigation Stack'i tamamen temizliyoruz.
