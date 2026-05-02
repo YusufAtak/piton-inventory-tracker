@@ -40,11 +40,15 @@ To quickly explore the role-based features of the application, you can use the f
 
 **1. Submitting a Maintenance Report (Personnel Role)**
 Field personnel use this panel to report the condition of equipment.
-- Enter the device name and select its current status (*Working, Broken, or Missing*).
+- **Dynamic Selection:** Select the device from the real-time dropdown menu (populated directly from the Firestore Inventory collection).
+- Select its current status (*Working, Broken, or Missing*).
 - **Smart Validation:** If the status is marked as **"Broken"**, the application automatically prompts the user to take a photograph of the equipment. The report cannot be submitted without this visual evidence.
 - Add additional notes and click submit.
 <br>
-<img width="1000" height="600" alt="personnel_dashboard_eng" src="https://github.com/user-attachments/assets/5b66c9f6-4205-4aac-b9bb-776e8b82808f" />
+<img width="1000" height="680" alt="image" src="https://github.com/user-attachments/assets/ac6436bd-ebee-4e58-884f-92e01dfdfa90" />
+<img width="1000" height="613" alt="image" src="https://github.com/user-attachments/assets/2f0d1a5e-eabf-48c6-9b01-1b536b4cfc7f" />
+
+
 
 **2. Monitoring Reports (Admin Role)**
 Administrators have access to a real-time feed of all submitted reports.
@@ -54,8 +58,16 @@ Administrators have access to a real-time feed of all submitted reports.
 <br>
 <img width="1000" height="691" alt="admin_dashboard_eng" src="https://github.com/user-attachments/assets/94005003-72d2-472b-bd06-d5410a6e2559" />
 
+**3. Dynamic Device Registration (Admin Role)**
+Admins can directly expand the field inventory without altering the codebase.
+- Click the **Add Device** icon in the top right corner of the Admin Dashboard.
+- Enter the Device Name, Device Type (e.g., HMI Panel, Barcode Printer), and Serial Number.
+- Click 'Save'. This instantly adds the hardware to Firestore, making it immediately available for field personnel to select and report on.
+<br>
+<img width="486" height="461" alt="add_device_eng" src="https://github.com/user-attachments/assets/36f1a1c5-5b82-40a2-8f47-d9d6447aae35" />
 
-**3. User Management & Creation (Admin Role)**
+
+**4. User Management & Creation (Admin Role)**
 Admins can scale the system by adding new team members directly from the app.
 - Click the **Add User (+)** icon in the top right corner of the Admin Dashboard.
 - Enter the new user's email address and a secure password.
@@ -65,7 +77,7 @@ Admins can scale the system by adding new team members directly from the app.
 <img width="500" height="426" alt="add_user_eng" src="https://github.com/user-attachments/assets/83533682-0d64-4d21-a55c-cfa449ef080c" />
 
 
-**4. Real-time Language Switch**
+**5. Real-time Language Switch**
 You can instantly toggle the application language between English and Turkish by tapping the language button (**TR / EN**) located at the top right corner of any screen. The state is preserved during the transition.
 
 
@@ -134,12 +146,13 @@ flutter run
 
 **1. Bakım Raporu Oluşturma (Personel Rolü)**
 Saha personelleri, cihazların son durumlarını bildirmek için bu ekranı kullanır.
-- Cihaz adı girilir ve durumu (*Çalışıyor, Arızalı veya Eksik*) seçilir.
+- **Canlı Seçim:** İşlem yapılacak cihaz, doğrudan Firestore envanterinden beslenen dinamik açılır menüden (Dropdown) seçilir.
+- Cihazın durumu (*Çalışıyor, Arızalı veya Eksik*) seçilir.
 - **Akıllı Doğrulama (Smart Validation):** Eğer cihaz durumu **"Arızalı"** olarak seçilirse, sistem otomatik olarak kamerayı açar veya galeriye yönlendirir. Arızalı cihazlar için fotoğraf eklemek zorunludur.
 - Varsa ekstra notlar eklenir ve rapor sisteme gönderilir.
 <br>
-<img width="1000" height="662" alt="personel_panel_tr" src="https://github.com/user-attachments/assets/068048ce-62fa-401e-aec0-b4fe7c87ab81" />
-
+<img width="1000" height="600" alt="personel_tr" src="https://github.com/user-attachments/assets/e18abe46-fe4f-4973-a71b-1765e0a30f37" />
+<img width="1000" height="657" alt="personel2_tr" src="https://github.com/user-attachments/assets/587367a9-7099-4ac1-8212-f4bef68df6d8" />
 
 **2. Raporların İzlenmesi (Admin Rolü)**
 Yöneticiler, sahadan gelen tüm bildirimleri tek bir ekrandan canlı olarak takip eder.
@@ -149,8 +162,15 @@ Yöneticiler, sahadan gelen tüm bildirimleri tek bir ekrandan canlı olarak tak
 <br>
 <img width="1000" height="687" alt="admin_tr" src="https://github.com/user-attachments/assets/65965717-4b7b-4c26-849e-d0069558a780" />
 
+**3. Yeni Cihaz Envanteri Ekleme (Admin Rolü)**
+Yöneticiler, sahadaki cihaz envanterini koda müdahale etmeden dinamik olarak genişletebilir.
+- Admin panelinin sağ üst köşesindeki **Cihaz Ekle** ikonuna tıklanır.
+- Cihaz Adı, Cihaz Tipi (Örn: HMI Panel) ve Seri Numarası girilerek 'Kaydet' butonuna basılır.
+- Yeni cihaz anında Firestore veritabanına eklenir ve saha personelinin seçimi için açılır menüde anında görünür hale gelir.
+<br>
+<img width="435" height="432" alt="cihaz_ekle_tr" src="https://github.com/user-attachments/assets/b7c0de91-85db-43a5-b1a2-c3ae280b1052" />
 
-**3. Yeni Kullanıcı Ekleme Süreci (Admin Rolü)**
+**4. Yeni Kullanıcı Ekleme Süreci (Admin Rolü)**
 Sisteme yeni personeller veya yöneticiler dahil etmek Admin yetkisindedir.
 - Admin panelinin sağ üst köşesindeki **Kullanıcı Ekle (+)** ikonuna tıklanır.
 - Açılan pencerede yeni kullanıcının e-posta adresi ve şifresi belirlenir.
@@ -158,7 +178,7 @@ Sisteme yeni personeller veya yöneticiler dahil etmek Admin yetkisindedir.
 <br>
 <img width="500" height="450" alt="kullanıcı_ekle_tr" src="https://github.com/user-attachments/assets/1ac13d84-3c66-4547-a860-cd378f061b44" />
 
-**4. Anlık Dil Değişimi**
+**5. Anlık Dil Değişimi**
 Uygulamanın dilini İngilizce ve Türkçe arasında anında değiştirmek için herhangi bir ekranın sağ üst köşesinde bulunan dil butonuna (**TR / EN**) tıklayabilirsiniz. Dil değişimi sırasında sayfadaki verileriniz (state) kaybolmaz.
 
 
