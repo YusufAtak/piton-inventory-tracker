@@ -17,12 +17,13 @@ class PersonnelDashboard extends StatefulWidget {
 }
 
 class _PersonnelDashboardState extends State<PersonnelDashboard> {
-  String? _selectedDevice; // Eski _deviceController yerine bu eklendi
+  String? _selectedDevice;
   final TextEditingController _noteController = TextEditingController();
   XFile? _imageFile;
   bool _isLoading = false;
 
-  // Veritabanına kaydedilecek orijinal değerler
+  // Firestore'da raporların tutarlı olması için
+  // veritabanına yazılacak çekirdek verileri (raw data) sabit tutuyoruz.
   String _selectedStatus = 'Çalışıyor';
   final List<String> _statusList = ['Çalışıyor', 'Arızalı', 'Eksik'];
 
@@ -38,7 +39,7 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
   }
 
   Future<void> _submitReport() async {
-    // Doğrulama kontrolü Dropdown'a göre güncellendi
+    // Form Doğrulama
     if (_selectedDevice == null || _noteController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('empty_device_note_error'.tr())),
@@ -46,6 +47,8 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
       return;
     }
 
+    // Eğer cihaz 'Arızalı' olarak raporlanıyorsa,
+    // saha personelinin görsel kanıt (fotoğraf) sunması zorunludur.
     if (_selectedStatus == 'Arızalı' && _imageFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('photo_required_error'.tr())),
@@ -60,12 +63,16 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
     try {
       String? imageUrl;
 
+      // Eğer fotoğraf çekildiyse Firebase Storage'a yüklenir.
       if (_imageFile != null) {
+        // Dosyaların birbiri üzerine yazılmasını (overwrite) engellemek için benzersiz bir timestamp ismi kullanıyoruz.
         final storageRef = FirebaseStorage.instance
             .ref()
             .child('maintenance_photos')
             .child('${DateTime.now().millisecondsSinceEpoch}.jpg');
 
+        // Flutter Web ve Mobil platformlarının dosya okuma mimarileri farklıdır.
+        // Çökmeleri önlemek için kIsWeb ile platforma özel upload işlemi yapıyoruz.
         if (kIsWeb) {
           final bytes = await _imageFile!.readAsBytes();
           final uploadTask = await storageRef.putData(bytes);
@@ -78,8 +85,10 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
 
       final user = FirebaseAuth.instance.currentUser;
 
+      // Raporun Kaydedilmesi
+      // Verinin güvenliğini sağlamak için cihazın yerel saati yerine sunucu saati (serverTimestamp) kullanılır.
       await FirebaseFirestore.instance.collection('MaintenanceLogs').add({
-        'deviceName': _selectedDevice, // Artık seçim listesinden geliyor
+        'deviceName': _selectedDevice,
         'note': _noteController.text.trim(),
         'status': _selectedStatus,
         'photoUrl': imageUrl,
@@ -87,9 +96,10 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
         'timestamp': FieldValue.serverTimestamp(),
       });
 
+      // Başarılı işlem sonrası Form (UI) temizlenir.
       _noteController.clear();
       setState(() {
-        _selectedDevice = null; // Gönderim sonrası seçim sıfırlanıyor
+        _selectedDevice = null;
         _imageFile = null;
         _selectedStatus = 'Çalışıyor';
       });
@@ -114,7 +124,6 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
 
   @override
   void dispose() {
-    // _deviceController dispose işlemi kaldırıldı
     _noteController.dispose();
     super.dispose();
   }
@@ -126,9 +135,9 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
         title: Text('personnel_panel'.tr()),
         backgroundColor: Colors.blueGrey,
         actions: [
-          // DİL DEĞİŞTİRME BUTONU
           TextButton(
             onPressed: () {
+              // Uygulama yeniden başlatılmadan anlık dil değişimi.
               if (context.locale == const Locale('tr')) {
                 context.setLocale(const Locale('en'));
               } else {
@@ -144,6 +153,7 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
             icon: const Icon(Icons.logout),
             tooltip: 'logout'.tr(),
             onPressed: () async {
+              // Oturumu kapatıp Navigation Stack'i tamamen temizliyoruz.
               await FirebaseAuth.instance.signOut();
               if (context.mounted) {
                 Navigator.pushAndRemoveUntil(
@@ -161,7 +171,8 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // --- YENİ EKLENEN CANLI ENVANTER DROPDOWN ALANI ---
+            // Saha personelinin cihaz listesi koda gömülü değildir. Doğrudan Firestore'dan alınır.
+            // Bu sayede Admin sisteme yeni bir cihaz eklediğinde, personelin ekranı anında güncellenir.
             StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance.collection('Inventory').snapshots(),
               builder: (context, snapshot) {
@@ -179,27 +190,22 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
                   );
                 }
 
-                // Firebase'den gelen belgeleri Listeye çevir (Artık TYPE bilgisini de alıyoruz)
+                // Veritabanındaki eski kayıtlarda 'type' alanı olmayabilir.
+                // Uygulamanın NullPointerException ile çökmesini engellemek için güvenli parsing yapıyoruz.
                 final envanterListesi = snapshot.data!.docs.map((doc) {
-                  // Veriyi güvenli bir şekilde Map'e çeviriyoruz
                   final data = doc.data() as Map<String, dynamic>;
-
                   final deviceName = data['deviceName']?.toString() ?? 'Bilinmeyen Cihaz';
-
-                  // Eğer type alanı veritabanında varsa al, yoksa boş bırak (Crash olmasını önler)
                   final type = data.containsKey('type') ? data['type'].toString() : '';
 
-                  // Eğer type doluysa ismin yanına köşeli parantez içinde ekle
                   if (type.isNotEmpty) {
                     return '$deviceName [$type]';
                   }
-
-                  return deviceName; // Type yoksa sadece ismini döndür
+                  return deviceName;
                 }).toList();
 
                 return DropdownButtonFormField<String>(
                   decoration: InputDecoration(
-                    labelText: 'device_name'.tr(), // Dil dosyandaki key'i koruduk
+                    labelText: 'device_name'.tr(),
                     border: const OutlineInputBorder(),
                     prefixIcon: const Icon(Icons.devices_other),
                   ),
@@ -220,7 +226,8 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
               },
             ),
             const SizedBox(height: 16),
-            // --- MEVCUT DURUM SEÇİM ALANI ---
+
+            // Durum Seçimi
             DropdownButtonFormField<String>(
               initialValue: _selectedStatus,
               decoration: InputDecoration(
@@ -228,7 +235,8 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
                 border: const OutlineInputBorder(),
               ),
               items: _statusList.map((String status) {
-                // Veritabanı değerine göre ekranda çevirisini gösteriyoruz
+                // Veritabanında veri bütünlüğünü sağlamak için kayıtlar standart (TR) tutulur,
+                // ancak ekranda kullanıcının seçtiği dile (Locale) göre çevrilerek gösterilir.
                 String translatedStatus = status;
                 if (status == 'Çalışıyor') translatedStatus = 'working'.tr();
                 if (status == 'Arızalı') translatedStatus = 'broken'.tr();
@@ -242,6 +250,7 @@ class _PersonnelDashboardState extends State<PersonnelDashboard> {
               onChanged: (String? newValue) {
                 setState(() {
                   _selectedStatus = newValue!;
+                  // Cihaz durumu 'Arızalı' olmaktan çıkarsa, yüklenmiş olan fotoğrafı bellekten temizleriz.
                   if (_selectedStatus != 'Arızalı') {
                     _imageFile = null;
                   }

@@ -5,8 +5,10 @@ import 'firebase_options.dart';
 import 'login_screen.dart';
 
 void main() async {
+  // Flutter motoru ile uygulamanın native katmanı arasındaki iletişimi kurar.
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Backend (Firebase) Başlatılması
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -17,7 +19,7 @@ void main() async {
     EasyLocalization(
       supportedLocales: const [Locale('tr'), Locale('en')],
       path: 'assets/translations',
-      fallbackLocale: const Locale('tr'),
+      fallbackLocale: const Locale('tr'), // Cihaz dili desteklenmiyorsa varsayılan dil
       child: const MyApp(),
     ),
   );
@@ -38,6 +40,7 @@ class MyApp extends StatelessWidget {
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
       locale: context.locale,
+      //Uygulama her zaman Login (Giriş) ekranından başlar.
       home: const LoginScreen(),
     );
   }

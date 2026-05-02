@@ -23,8 +23,6 @@ class AddMaintenanceScreen extends StatefulWidget {
 
 class _AddMaintenanceScreenState extends State<AddMaintenanceScreen> {
   final TextEditingController _noteController = TextEditingController();
-
-  // Yeni: Cihaz durumu için değişken eklendi
   String _selectedStatus = 'Çalışıyor';
   final List<String> _statusOptions = ['Çalışıyor', 'Arızalı', 'Eksik'];
 
@@ -34,12 +32,16 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen> {
 
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
+
+    // Flutter Web ve Mobil mimarilerinde dosya sistemleri farklı çalışır.
+    // kIsWeb kontrolü ile platforma özel doğru veri kaynağına (Galeri veya Kamera) yönlendirme yapıyoruz.
     final XFile? image = await picker.pickImage(
       source: kIsWeb ? ImageSource.gallery : ImageSource.camera,
     );
 
     if (image != null) {
       if (kIsWeb) {
+        // Web ortamında dosyalar doğrudan path üzerinden okunamaz, byte dizisine çevrilmelidir.
         var f = await image.readAsBytes();
         setState(() {
           _webImage = f;
@@ -54,7 +56,7 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen> {
   }
 
   Future<void> _submitReport() async {
-    // 1. Not alanı her zaman zorunlu
+    // Form Validasyonu
     if (_noteController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Lütfen bir açıklama notu girin.')),
@@ -62,7 +64,8 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen> {
       return;
     }
 
-    // 2. MÜLAKAT KRİTERİ: Fotoğraf SADECE 'Arızalı' seçilirse zorunludur!
+    // Donanım "Arızalı" olarak raporlanıyorsa, süreç güvenliği gereği fotoğraf sunulması zorunludur.
+    // Bu kural backend'e gitmeden istemci (client) tarafında yakalanarak gereksiz sunucu yükü engellenir.
     if (_selectedStatus == 'Arızalı' && _pickedFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Cihaz "Arızalı" ise fotoğraf eklemek zorunludur!')),
@@ -75,11 +78,13 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen> {
     try {
       String? downloadUrl;
 
-      // 3. Sadece fotoğraf seçilmişse Storage'a yükle (Çalışıyor/Eksik için boş geçebilir)
+      // Sadece fotoğraf seçilmişse Firebase Storage upload işlemi başlatılır.
       if (_pickedFile != null) {
+        // Overwrite (Üzerine yazma) durumlarını engellemek için epoch timestamp ile benzersiz dosya isimleri oluşturulur.
         String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
         Reference storageRef = FirebaseStorage.instance.ref().child('maintenance_photos/$fileName');
 
+        // Platforma göre upload türü (Data vs File) dinamik olarak ayarlanır.
         if (kIsWeb) {
           TaskSnapshot snapshot = await storageRef.putData(_webImage);
           downloadUrl = await snapshot.ref.getDownloadURL();
@@ -89,13 +94,14 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen> {
         }
       }
 
-      // 4. Firestore'a Kayıt (Status alanı eklendi)
+      // Timestamp telefonun  yerel saati yerine
+      // veritabanı tutarlılığı için FieldValue.serverTimestamp() ile sunucu saatinden alınır.
       await FirebaseFirestore.instance.collection('MaintenanceLogs').add({
         'deviceId': widget.deviceId,
         'deviceName': widget.deviceName,
-        'status': _selectedStatus, // Mülakatta istenen durum bilgisi eklendi
+        'status': _selectedStatus,
         'note': _noteController.text.trim(),
-        'photoUrl': downloadUrl, // Fotoğraf yoksa null olarak kaydedilecek
+        'photoUrl': downloadUrl,
         'timestamp': FieldValue.serverTimestamp(),
         'personnelEmail': FirebaseAuth.instance.currentUser?.email,
       });
@@ -132,7 +138,6 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // YENİ EKLENEN DURUM SEÇİCİ (Dropdown)
             DropdownButtonFormField<String>(
               initialValue: _selectedStatus,
               decoration: const InputDecoration(
@@ -148,7 +153,8 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen> {
               onChanged: (String? newValue) {
                 setState(() {
                   _selectedStatus = newValue!;
-                  // Durum değiştiğinde fotoğrafı temizle (İsteğe bağlı)
+                  // Kullanıcı durumu 'Arızalı'dan başka bir şeye çevirirse,
+                  // yanlışlıkla yüklenmiş/çekilmiş fotoğrafı bellekten temizliyoruz.
                   if (_selectedStatus != 'Arızalı') {
                     _pickedFile = null;
                     _webImage = null;
@@ -158,13 +164,13 @@ class _AddMaintenanceScreenState extends State<AddMaintenanceScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Fotoğraf Alanı (Sadece Arızalı seçiliyse gösterilir/vurgulanır)
+            // Sadece cihaz durumu 'Arızalı' seçildiğinde render edilir.
             if (_selectedStatus == 'Arızalı') ...[
               Container(
                 height: 200,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.redAccent, width: 2), // Zorunlu olduğunu belli etmek için kırmızı çerçeve
+                  border: Border.all(color: Colors.redAccent, width: 2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: _pickedFile == null

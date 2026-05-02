@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:easy_localization/easy_localization.dart'; // ÇEVİRİ İÇİN EKLENDİ
-
+import 'package:easy_localization/easy_localization.dart';
 import 'package:piton_tracker/login_screen.dart';
 
 class AdminDashboard extends StatefulWidget {
@@ -15,21 +14,24 @@ class AdminDashboard extends StatefulWidget {
 
 class _AdminDashboardState extends State<AdminDashboard> {
 
-  // --- CİHAZ EKLEME FONKSİYONU (ÇEVİRİ DESTEKLİ) ---
+
+  // Cihaz Envanter Yönetimi
   Future<void> _showAddDeviceDialog() async {
     final TextEditingController deviceNameController = TextEditingController();
     final TextEditingController serialNumberController = TextEditingController();
     final TextEditingController typeController = TextEditingController();
+
+    // UI State: İşlem sırasında butonu pasife alıp çift tıklama (double-post) riskini engelliyoruz.
     bool isSaving = false;
 
     showDialog(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: false, // İşlem bitmeden dışarı tıklanarak kapatılmasını önler
       builder: (BuildContext dialogContext) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: Text('add_new_device'.tr()), // ÇEVİRİ EKLENDİ
+              title: Text('add_new_device'.tr()),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -37,7 +39,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     TextField(
                       controller: deviceNameController,
                       decoration: InputDecoration(
-                        labelText: 'device_name_hint'.tr(), // ÇEVİRİ EKLENDİ
+                        labelText: 'device_name_hint'.tr(),
                         border: const OutlineInputBorder(),
                       ),
                     ),
@@ -45,7 +47,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     TextField(
                       controller: typeController,
                       decoration: InputDecoration(
-                        labelText: 'device_type_hint'.tr(), // ÇEVİRİ EKLENDİ
+                        labelText: 'device_type_hint'.tr(),
                         border: const OutlineInputBorder(),
                       ),
                     ),
@@ -53,7 +55,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     TextField(
                       controller: serialNumberController,
                       decoration: InputDecoration(
-                        labelText: 'serial_number_hint'.tr(), // ÇEVİRİ EKLENDİ
+                        labelText: 'serial_number_hint'.tr(),
                         border: const OutlineInputBorder(),
                       ),
                     ),
@@ -69,9 +71,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   onPressed: isSaving
                       ? null
                       : () async {
+                    // Basit Form Validasyonu
                     if (deviceNameController.text.trim().isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('empty_device_name_error'.tr())), // ÇEVİRİ EKLENDİ
+                        SnackBar(content: Text('empty_device_name_error'.tr())),
                       );
                       return;
                     }
@@ -81,6 +84,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     });
 
                     try {
+                      // Yeni cihaz doğrudan Firestore 'Inventory' koleksiyonuna eklenir.
+                      // Bu sayede Personel ekranındaki StreamBuilder tetiklenir ve saha personelinin
+                      // cihazındaki dropdown listesi uygulamayı yeniden başlatmaya gerek kalmadan canlı olarak güncellenir.
                       await FirebaseFirestore.instance.collection('Inventory').add({
                         'deviceName': deviceNameController.text.trim(),
                         'type': typeController.text.trim(),
@@ -90,7 +96,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       if (context.mounted) {
                         Navigator.pop(dialogContext);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('device_added_success'.tr())), // ÇEVİRİ EKLENDİ
+                          SnackBar(content: Text('device_added_success'.tr())),
                         );
                       }
                     } catch (e) {
@@ -114,7 +120,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     width: 20,
                     child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                   )
-                      : Text('save'.tr(), style: const TextStyle(color: Colors.white)), // ÇEVİRİ EKLENDİ
+                      : Text('save'.tr(), style: const TextStyle(color: Colors.white)),
                 ),
               ],
             );
@@ -124,11 +130,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  // --- KULLANICI EKLEME FONKSİYONU ---
+
+
+  // Kullanıcı ve Rol Yönetimi
   Future<void> _showAddUserDialog() async {
     final TextEditingController emailController = TextEditingController();
     final TextEditingController passwordController = TextEditingController();
-    String selectedRole = 'Personel';
+    String selectedRole = 'Personel'; // Varsayılan rol
 
     showDialog(
       context: context,
@@ -179,24 +187,27 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     if (emailController.text.trim().isEmpty ||
                         passwordController.text.trim().length < 6) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text('invalid_email_password'.tr())),
+                        SnackBar(content: Text('invalid_email_password'.tr())),
                       );
                       return;
                     }
 
                     try {
+                      // Firebase Auth, varsayılan olarak yeni oluşturulan kullanıcıyla anında oturum açar.
+                      // Adminin mevcut oturumunu bozmamak için, geçici (Secondary) bir Firebase instance'ı ayağa kaldırıyoruz.
                       FirebaseApp tempApp = await Firebase.initializeApp(
                         name: 'tempUserCreation',
                         options: Firebase.app().options,
                       );
 
+                      // Yeni kullanıcıyı bu geçici instance üzerinde oluşturuyoruz.
                       UserCredential userCredential = await FirebaseAuth.instanceFor(app: tempApp)
                           .createUserWithEmailAndPassword(
                         email: emailController.text.trim(),
                         password: passwordController.text.trim(),
                       );
 
+                      // Kullanıcı kimliği (Auth) oluştuktan sonra, asıl instance üzerinden Firestore'a kullanıcının Rolünü yazıyoruz .
                       await FirebaseFirestore.instance
                           .collection('Users')
                           .doc(userCredential.user!.uid)
@@ -206,6 +217,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         'createdAt': FieldValue.serverTimestamp(),
                       });
 
+                      // İşlem bitince bellekte yer kaplamaması için geçici instance'ı siliyoruz.
                       await tempApp.delete();
 
                       if (context.mounted) {
@@ -239,9 +251,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
         title: Text('admin_panel'.tr()),
         backgroundColor: Colors.blueGrey,
         actions: [
-          // DİL DEĞİŞTİRME BUTONU
+          // Çoklu Dil Yönetimi
           TextButton(
             onPressed: () {
+              // Uygulamanın anlık durumu (state) kaybolmadan context üzerinden lokalizasyon değiştirilir.
               if (context.locale == const Locale('tr')) {
                 context.setLocale(const Locale('en'));
               } else {
@@ -253,23 +266,22 @@ class _AdminDashboardState extends State<AdminDashboard> {
               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
           ),
-          // --- CİHAZ EKLEME BUTONU ---
           IconButton(
             icon: const Icon(Icons.add_to_queue),
-            tooltip: 'add_device_tooltip'.tr(), // ÇEVİRİ EKLENDİ
+            tooltip: 'add_device_tooltip'.tr(),
             onPressed: _showAddDeviceDialog,
           ),
-          // KULLANICI EKLEME BUTONU
           IconButton(
             icon: const Icon(Icons.person_add),
             tooltip: 'add_new_user'.tr(),
             onPressed: _showAddUserDialog,
           ),
-          // ÇIKIŞ BUTONU
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'logout'.tr(),
             onPressed: () async {
+              // GÜVENLİ ÇIKIŞ: Oturumu kapatıp Navigation Stack'i tamamen temizliyoruz.
+              // Bu sayede kullanıcı Android cihazlarda geri (Back) butonuna basarak yetkisiz sayfalara ulaşamaz.
               await FirebaseAuth.instance.signOut();
               if (context.mounted) {
                 Navigator.pushAndRemoveUntil(
@@ -282,10 +294,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
           )
         ],
       ),
+
+      // FutureBuilder yerine StreamBuilder kullanıldı. Böylece veritabanındaki her yeni Insert işlemi,
+      // sayfayı pull-to-refresh yapmaya gerek kalmadan UI'ı anında günceller.
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('MaintenanceLogs')
-            .orderBy('timestamp', descending: true)
+            .orderBy('timestamp', descending: true) // En yeni raporlar en üstte gösterilir
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -305,7 +320,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
               final deviceName = log['deviceName'] ?? 'unknown'.tr();
               final note = log['note'] ?? 'no_note'.tr();
 
-              // Durumu çevirmek için kontrol
+              // Firestore'da sabit Türkçe ('Arızalı') tutulan statü,
+              // burada mevcut Locale diline (Örn: 'Broken') dinamik olarak haritalanır (mapping).
               String statusRaw = log['status'] ?? 'unknown'.tr();
               String statusTranslated = statusRaw;
               if (statusRaw == 'Çalışıyor') statusTranslated = 'working'.tr();
@@ -336,6 +352,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       Text('${'date'.tr()}: $formattedDate', style: const TextStyle(color: Colors.blueGrey, fontWeight: FontWeight.w500)),
                     ],
                   ),
+                  // Saha personelinin Firebase Storage'a yüklediği fotoğraf, sadece var ise gösterilir.
                   trailing: photoUrl != null
                       ? IconButton(
                     icon: const Icon(Icons.image, color: Colors.blueGrey),

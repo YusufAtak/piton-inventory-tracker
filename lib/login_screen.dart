@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:easy_localization/easy_localization.dart'; // ÇEVİRİ İÇİN EKLENDİ
+import 'package:easy_localization/easy_localization.dart';
 import 'admin_dashboard.dart';
 import 'personnel_dashboard.dart';
 
@@ -20,12 +20,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login() async {
     if (_isLoading) return;
-
+    // Kullanıcı butona bastığında açık olan sanal klavyeyi (Soft Keyboard) gizliyoruz.
     FocusScope.of(context).unfocus();
 
     if (_emailController.text.trim().isEmpty || _passwordController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('empty_fields_error'.tr())), // ÇEVİRİ EKLENDİ
+        SnackBar(content: Text('empty_fields_error'.tr())),
       );
       return;
     }
@@ -33,11 +33,13 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
+      // Kullanıcının e-posta ve şifresi Firebase Auth üzerinden doğrulanır.
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
+      // Kullanıcının sistemdeki rolünü Firestore'dan öğrenmemiz gerekiyor.
       var userQuery = await FirebaseFirestore.instance
           .collection('Users')
           .where('email', isEqualTo: _emailController.text.trim())
@@ -47,6 +49,9 @@ class _LoginScreenState extends State<LoginScreen> {
         String userRole = userQuery.docs.first.get('role');
 
         if (mounted) {
+          // Kullanıcı içeri alındığında 'pushReplacement' kullanıyoruz.
+          // Böylece Login ekranı Navigation Stack den tamamen silinir
+          // ve Android cihazlardaki donanımsal 'Geri' tuşu ile tekrar bu ekrana düşmesi engellenir.
           if (userRole.toLowerCase() == 'admin') {
             Navigator.pushReplacement(
               context,
@@ -60,16 +65,18 @@ class _LoginScreenState extends State<LoginScreen> {
           }
         }
       } else {
+        // Eğer hesap Auth tarafında var ama Firestore'da rolü tanımlanmamışsa
+        // (örn: silinmiş veya bozuk veri - Orphan Account), güvenliği sağlamak için oturumu hemen geri kapatıyoruz.
         await FirebaseAuth.instance.signOut();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('role_error'.tr())), // ÇEVİRİ EKLENDİ
+            SnackBar(content: Text('role_error'.tr())),
           );
         }
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
-        // Firebase Auth hataları için basit hata yönetimi
+        // Firebase'den dönen spesifik Auth hataları kullanıcıya iletilir.
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${'unexpected_error'.tr()} ${e.message}')),
         );
@@ -87,6 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
+    // Bellek Sızıntılarını (Memory Leak) önlemek için controller'ları temizliyoruz.
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -96,14 +104,13 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      // DİL DEĞİŞTİRME BUTONU BURAYA EKLENDİ
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
           TextButton.icon(
             onPressed: () {
-              // Mevcut dil Türkçe ise İngilizce yap, İngilizce ise Türkçe yap
+              // Uygulama yeniden başlatılmadan anlık dil değişimi (Context üzerinden).
               if (context.locale == const Locale('tr')) {
                 context.setLocale(const Locale('en'));
               } else {
@@ -112,7 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
             },
             icon: const Icon(Icons.language, color: Colors.blueGrey),
             label: Text(
-              context.locale.languageCode.toUpperCase(), // Ekranda TR veya EN yazar
+              context.locale.languageCode.toUpperCase(),
               style: const TextStyle(color: Colors.blueGrey, fontWeight: FontWeight.bold),
             ),
           ),
@@ -130,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Icon(Icons.build_circle_outlined, size: 100, color: Colors.blueGrey),
                 const SizedBox(height: 24),
                 Text(
-                  'app_title'.tr(), // ÇEVİRİ EKLENDİ
+                  'app_title'.tr(),
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.blueGrey),
                 ),
@@ -142,7 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   textInputAction: TextInputAction.next,
                   onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                   decoration: InputDecoration(
-                    labelText: 'email'.tr(), // ÇEVİRİ EKLENDİ
+                    labelText: 'email'.tr(),
                     prefixIcon: const Icon(Icons.email_outlined),
                     border: const OutlineInputBorder(),
                   ),
@@ -152,10 +159,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextFormField(
                   controller: _passwordController,
                   obscureText: true,
+                  // Klavyedeki Done tuşuyla doğrudan login fonksiyonunu tetikliyoruz
                   textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) => _login(),
                   decoration: InputDecoration(
-                    labelText: 'password'.tr(), // ÇEVİRİ EKLENDİ
+                    labelText: 'password'.tr(),
                     prefixIcon: const Icon(Icons.lock_outline),
                     border: const OutlineInputBorder(),
                   ),
@@ -171,7 +179,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     backgroundColor: Colors.blueGrey,
                   ),
                   child: Text(
-                    'login_button'.tr(), // ÇEVİRİ EKLENDİ
+                    'login_button'.tr(),
                     style: const TextStyle(fontSize: 16, color: Colors.white),
                   ),
                 ),

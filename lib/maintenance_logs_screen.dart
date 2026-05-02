@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class MaintenanceLogsScreen extends StatelessWidget {
   const MaintenanceLogsScreen({super.key});
@@ -8,9 +9,10 @@ class MaintenanceLogsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Maintenance Logs'),
-        backgroundColor: Colors.blueGrey,
+        title: Text('maintenance_logs_title'.tr()),
       ),
+      // StreamBuilder ile Firestore 'MaintenanceLogs' koleksiyonu anlık dinlenir.
+      // Yeni bir rapor eklendiğinde uygulama state'i otomatik güncellenir, manuel pull-to-refresh'e gerek kalmaz.
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('MaintenanceLogs')
@@ -18,7 +20,7 @@ class MaintenanceLogsScreen extends StatelessWidget {
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return const Center(child: Text('Error loading logs'));
+            return Center(child: Text('error_loading_logs'.tr()));
           }
 
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -28,13 +30,27 @@ class MaintenanceLogsScreen extends StatelessWidget {
           final List<QueryDocumentSnapshot> logs = snapshot.data!.docs;
 
           if (logs.isEmpty) {
-            return const Center(child: Text('No maintenance logs found.'));
+            return Center(child: Text('no_logs_found'.tr()));
           }
 
           return ListView.builder(
             itemCount: logs.length,
             itemBuilder: (context, index) {
-              var log = logs[index];
+              var data = logs[index].data() as Map<String, dynamic>;
+
+             // Varsayılan Değer Atamaları
+              final String deviceName = data['deviceName'] ?? 'unknown_device'.tr();
+              final String note = data['note'] ?? '';
+              final String personnelEmail = data['personnelEmail'] ?? 'unknown'.tr();
+              final bool hasPhoto = data.containsKey('photoUrl') && data['photoUrl'] != null;
+
+              // Sunucudan gelen zaman damgasını okunabilir formata çeviriyoruz.
+              String formattedDate = 'unknown_date'.tr();
+              if (data.containsKey('timestamp') && data['timestamp'] != null) {
+                DateTime date = (data['timestamp'] as Timestamp).toDate();
+                formattedDate = '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+              }
+
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 clipBehavior: Clip.antiAlias,
@@ -42,30 +58,50 @@ class MaintenanceLogsScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (log['photoUrl'] != null)
+                    if (hasPhoto)
                       Image.network(
-                        log['photoUrl'],
+                        data['photoUrl'],
                         height: 200,
                         width: double.infinity,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                        const SizedBox(height: 200, child: Center(child: Icon(Icons.broken_image, size: 50))),
+                        errorBuilder: (context, error, stackTrace) => const SizedBox(
+                          height: 200,
+                          child: Center(
+                            child: Icon(Icons.broken_image, size: 50, color: Colors.grey),
+                          ),
+                        ),
                       ),
                     Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            log['deviceName'] ?? 'Unknown Device',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  deviceName,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Text(
+                                formattedDate,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Note: ${log['note']}',
+                            '${'note'.tr()}: $note',
                             style: const TextStyle(fontSize: 16),
                           ),
                           const SizedBox(height: 16),
@@ -73,11 +109,14 @@ class MaintenanceLogsScreen extends StatelessWidget {
                             children: [
                               const Icon(Icons.person, size: 16, color: Colors.blueGrey),
                               const SizedBox(width: 8),
-                              Text(
-                                log['personnelEmail'] ?? 'Unknown',
-                                style: const TextStyle(
-                                  color: Colors.blueGrey,
-                                  fontWeight: FontWeight.w500,
+                              Expanded(
+                                child: Text(
+                                  personnelEmail,
+                                  style: const TextStyle(
+                                    color: Colors.blueGrey,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],
