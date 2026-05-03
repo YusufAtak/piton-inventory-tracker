@@ -92,7 +92,9 @@ You can instantly toggle between light and dark modes by clicking the **Moon/Sun
 - **Localization:** easy_localization
 
 # 🚀 Installation & Setup
-> **Note on Firebase Setup:** For the purpose of this technical evaluation, the Firebase configuration file (`google-services.json`) has been intentionally included in the repository. The project is plug-and-play; **no additional Firebase setup is required** to run the application locally.
+> **Note on Firebase Setup:**  In a real-world production environment, the `google-services.json` file is strictly excluded from public repositories via `.gitignore`. However, it has been temporarily included in this repository exclusively to facilitate a rapid, plug-and-play evaluation process for the technical team.
+
+> *To review the Firestore architecture and App Distribution history as requested, a "Viewer" invitation has been sent to the assessment team's email address.*
 
 ```bash
 git clone https://github.com/YusufAtak/piton-inventory-tracker.git
@@ -137,7 +139,9 @@ Uygulamanın rol tabanlı erişim kontrolü (RBAC) özelliklerini, Admin panelin
 
 ### 🚀 Kurulum ve Çalıştırma
 
-> **Firebase Kurulumu Hakkında Not:** Bu teknik değerlendirme sürecinin hızlıca ilerleyebilmesi adına Firebase yapılandırma dosyası (`google-services.json`) projeye bilerek dahil edilmiştir. Proje "tak-çalıştır" mantığındadır; uygulamayı yerelde (lokalde) ayağa kaldırmak için **ekstra hiçbir Firebase kurulumuna gerek yoktur.**
+> **Firebase Kurulumu Hakkında Not:** Gerçek dünya (Production) senaryolarında `google-services.json` dosyası `.gitignore` kullanılarak public depolardan kesinlikle gizlenir. Ancak teknik ekibin test ve değerlendirme sürecini hızlandırmak (tak-çalıştır deneyimi sunmak) amacıyla bu dosya geçici olarak projede bırakılmıştır.
+
+> *İstenen Firestore veri mimarisi ve App Distribution sürüm geçmişinin incelenebilmesi adına, değerlendirme ekibinin e-posta adresine Firebase üzerinden "Görüntüleyici" (Viewer) daveti gönderilmiştir.*
 
 Projeyi bilgisayarınızda çalıştırmak için terminalinizde sırasıyla aşağıdaki komutları çalıştırmanız yeterlidir:
 
